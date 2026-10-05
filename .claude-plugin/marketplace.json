@@ -1,0 +1,14 @@
+{
+  "name": "vntrungld",
+  "description": "Claude Code plugins that keep secrets out of the model's context",
+  "owner": {
+    "name": "Lam Duc"
+  },
+  "plugins": [
+    {
+      "name": "tightlip",
+      "source": "./plugins/tightlip",
+      "description": "Redact keys, tokens and passwords in tool output; block credential dumps and prompts that contain secrets"
+    }
+  ]
+}

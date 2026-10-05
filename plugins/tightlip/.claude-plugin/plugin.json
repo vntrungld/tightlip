@@ -1,0 +1,41 @@
+{
+  "name": "tightlip",
+  "version": "1.0.5",
+  "description": "Keeps secrets out of Claude's context: redacts keys, tokens and passwords in tool output, blocks credential dumps, and stops before an unredactable result reaches the model.",
+  "author": {
+    "name": "Lam Duc"
+  },
+  "keywords": [
+    "security",
+    "secrets",
+    "redaction",
+    "hooks",
+    "dotenv"
+  ],
+  "userConfig": {
+    "quiet": {
+      "type": "boolean",
+      "title": "Quiet mode",
+      "description": "Don't show a status line each time a value is redacted.",
+      "default": false
+    },
+    "block_dotenv": {
+      "type": "boolean",
+      "title": "Block .env reads",
+      "description": "Deny reading .env files instead of redacting their values. .env.example stays readable.",
+      "default": false
+    },
+    "name_sessions": {
+      "type": "boolean",
+      "title": "Name new sessions after their folder",
+      "description": "Recommended. Without a name, Claude Code sends your first prompt to a small model to generate a session title, before hooks can block it.",
+      "default": true
+    },
+    "allow_regex": {
+      "type": "string",
+      "title": "Never redact (regex)",
+      "description": "Values that fully match this regular expression are left as they are, e.g. known test fixtures. Leave empty for none.",
+      "default": ""
+    }
+  }
+}

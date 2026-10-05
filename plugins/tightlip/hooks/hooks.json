@@ -1,0 +1,43 @@
+{
+  "description": "tightlip: redact secrets in tool output and block credential dumps",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          { "type": "command", "command": "python3", "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/tightlip.py"], "timeout": 10 }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          { "type": "command", "command": "python3", "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/tightlip.py"], "timeout": 10 }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell|Read|Grep|Write|Edit|MultiEdit|NotebookEdit|mcp__.*",
+        "hooks": [
+          { "type": "command", "command": "python3", "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/tightlip.py"], "timeout": 10 }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          { "type": "command", "command": "python3", "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/tightlip.py"], "timeout": 15 }
+        ]
+      }
+    ],
+    "PostToolBatch": [
+      {
+        "hooks": [
+          { "type": "command", "command": "python3", "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/tightlip.py"], "timeout": 15 }
+        ]
+      }
+    ]
+  }
+}
