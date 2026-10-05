@@ -1,6 +1,6 @@
 {
   "name": "vntrungld",
-  "description": "Claude Code plugins that keep secrets out of the model's context",
+  "description": "vntrungld's Claude Code plugins",
   "owner": {
     "name": "Lam Duc"
   },
@@ -9,6 +9,14 @@
       "name": "tightlip",
       "source": "./plugins/tightlip",
       "description": "Redact keys, tokens and passwords in tool output; block credential dumps and prompts that contain secrets"
+    },
+    {
+      "name": "jeffort",
+      "source": {
+        "source": "github",
+        "repo": "vntrungld/jeffort"
+      },
+      "description": "Per-turn effort routing with TypeSafe's Jev, applied per request. Off until /jev on."
     }
   ]
 }

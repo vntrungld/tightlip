@@ -99,7 +99,7 @@ NOT_SECRETS = [
     "SALT_CHARS = \"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\"",
     "ROLE_POLICY_NAME = 'AmazonElasticMapReduceforEC2Role'",
     # docs placeholders
-    "KEY=value", "pass --config KEY=VALUE", "API_TOKEN=changeme",
+    "KEY=value", "pass --config KEY=VALUE", "or pass --config KEY=VALUE.", "API_TOKEN=changeme",
     # parser state names in bundled JS
     'lastSignificantToken = "?ArrowFunctionParamsJSX";',
     # grep -rn output of source and config

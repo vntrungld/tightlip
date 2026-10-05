@@ -50,7 +50,7 @@ import time
 import urllib.parse
 from collections import Counter
 
-VERSION = "1.0.6"
+VERSION = "1.0.7"
 
 PLACEHOLDER_RE = re.compile(r"\[REDACTED:[a-z0-9-]+:[0-9a-f]{8}\]")
 
@@ -228,8 +228,9 @@ def strict_value_is_secret(v, quoted, key=""):
     """For dotenv/shell style UPPER_CASE=value: any real literal counts."""
     if _common_non_secret(v, quoted) or re.search(r"\s", v):
         return False  # whitespace: SQL, prose, display names
-    if not quoted and re.fullmatch(r"[A-Z][A-Z_]+", v):
-        return False  # another constant / enum name
+    bare = v.rstrip(".,;:!?)")  # end of a sentence: "pass --config KEY=VALUE."
+    if not quoted and (re.fullmatch(r"[A-Z][A-Z_]+", bare) or bare.lower() in NON_SECRET_LITERALS):
+        return False  # another constant / enum name, or a placeholder word
     if v.isdigit():
         return len(v) >= 6
     return len(v) >= 4
