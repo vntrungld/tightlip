@@ -1,68 +1,68 @@
 # tightlip
 
-Plugin Claude Code giúp model không thấy secret. Tên lấy từ *tight-lipped* (kín miệng): Claude vẫn làm việc với project của bạn nhưng không được thấy key, token hay mật khẩu. Repo này vừa là marketplace (tên `vntrungld`) vừa chứa plugin (tên `tightlip`).
+**English** · [Tiếng Việt](README.vi.md)
 
-| Hook | Làm gì |
+A Claude Code plugin that keeps secrets out of the model's context. Named after *tight-lipped*: Claude keeps working on your project, but never sees your keys, tokens or passwords. This repo is both a marketplace (`vntrungld`) and the plugin itself (`tightlip`).
+
+| Hook | What it does |
 |---|---|
-| `SessionStart` | Đặt tên phiên mới theo thư mục, ví dụ `teeinblue-backend 10-04 16:15`. Mục đích là để Claude Code không gửi prompt đầu tiên cho model nhỏ đặt tên phiên, vì request đó chạy trước khi hook kịp chặn. |
-| `UserPromptSubmit` | Chặn prompt có secret. Ngay sau khi chốt chặn cuối kích hoạt, prompt kế tiếp cũng bị chặn một lần để nhắc bạn. |
-| `PreToolUse` | Chặn từ trước các lệnh và file chắc chắn làm lộ secret: `env`, `echo $DB_PASSWORD`, `gh auth token`, `kubectl get secret -o yaml`, `~/.ssh/id_*`, `~/.aws/credentials`... Đồng thời chặn mọi Write/Edit/Bash/MCP có chứa placeholder `[REDACTED:...]`. |
-| `PostToolUse` | Che secret trong output của mọi tool bằng `updatedToolOutput`. Cấu trúc JSON giữ nguyên. |
-| `PostToolBatch` | Chốt chặn cuối trước mỗi request lên model. Nếu kết quả nào còn secret (thường là output của lệnh bị lỗi, loại hook không sửa được), nó dừng vòng lặp. |
+| `SessionStart` | Names new sessions after the folder, e.g. `my-backend 10-04 16:15`, so Claude Code doesn't send your first prompt to a small model to generate a title. That request runs before any hook can block it. |
+| `UserPromptSubmit` | Blocks prompts that contain a secret. Right after the final gate trips, the next prompt is also blocked once, as a reminder. |
+| `PreToolUse` | Denies commands and file reads that are certain to expose secrets: `env`, `echo $DB_PASSWORD`, `gh auth token`, `kubectl get secret -o yaml`, `~/.ssh/id_*`, `~/.aws/credentials`… Also denies any Write/Edit/Bash/MCP call that contains a `[REDACTED:...]` placeholder, so placeholders never overwrite real values. |
+| `PostToolUse` | Redacts secrets in every tool's output via `updatedToolOutput`, keeping the JSON shape intact. |
+| `PostToolBatch` | Final gate before each model request. If any result still holds a secret (usually output of a failed command, which hooks can't rewrite), it stops the turn and tells you where the secret is. |
 
-Plugin chỉ chạy hook, không thêm gì vào context của model, nên không tốn token. Cần Claude Code ≥ 2.1.121 và Python ≥ 3.8 (chỉ dùng thư viện chuẩn).
+The plugin only runs hooks and adds nothing to the model's context, so it costs no tokens. Requires Claude Code ≥ 2.1.121 and Python ≥ 3.8 (standard library only).
 
-## Cài qua marketplace
+## Install
 
-**1. Đưa repo lên git host.** GitHub private cũng được. Ví dụ: `github.com/<ban>/tightlip`.
-
-**2. Cài trong Claude Code:**
+**1. In Claude Code:**
 
 ```
-/plugin marketplace add <ban>/tightlip
+/plugin marketplace add vntrungld/tightlip
 /plugin install tightlip
 ```
 
-Hoặc chạy từ shell:
+Or from a shell:
 
 ```bash
-claude plugin marketplace add <ban>/tightlip
+claude plugin marketplace add vntrungld/tightlip
 claude plugin install tightlip
 ```
 
-Nếu có marketplace khác cũng chứa plugin tên `tightlip`, hãy dùng id đầy đủ `tightlip@vntrungld`.
+If another marketplace also has a plugin named `tightlip`, use the full id `tightlip@vntrungld`.
 
-Nếu chưa muốn push lên đâu, có thể cài thẳng từ thư mục: `claude plugin marketplace add ./tightlip`. Với cách này, hook chạy thẳng từ thư mục repo (dù Claude Code vẫn tạo một bản copy trong `~/.claude/plugins/cache/`), nên sửa `tightlip.py` xong thì lần gọi hook kế tiếp đã dùng code mới, không cần tăng version hay update. Riêng khi sửa `hooks.json` thì cần mở phiên mới.
+When developing the plugin you can install straight from a clone: `claude plugin marketplace add ./tightlip`. Hooks then run directly from the repo folder (Claude Code still keeps a copy in `~/.claude/plugins/cache/`), so edits to `tightlip.py` take effect on the next hook call, with no version bump or update. Changes to `hooks.json` need a new session.
 
-**3. Chỉnh tùy chọn (nếu cần):** chạy `/plugin configure tightlip@vntrungld`, hoặc vào `/config`.
+**2. Options (optional):** run `/plugin configure tightlip@vntrungld`, or use `/config`.
 
-| Tùy chọn | Mặc định | Tác dụng |
+| Option | Default | Effect |
 |---|---|---|
-| `name_sessions` | bật | Đặt tên phiên theo thư mục (xem giới hạn 2) |
-| `quiet` | tắt | Không hiện dòng thông báo mỗi khi có che |
-| `block_dotenv` | tắt | Chặn hẳn việc đọc `.env` thay vì che (vẫn cho đọc `.env.example`) |
-| `allow_regex` | trống | Giá trị khớp toàn bộ regex này sẽ không bị che, ví dụ dữ liệu test |
+| `name_sessions` | on | Name sessions after the folder (see limitation 2) |
+| `quiet` | off | Don't show a status line each time something is redacted |
+| `block_dotenv` | off | Deny reading `.env` files instead of redacting them (`.env.example` is still allowed) |
+| `allow_regex` | empty | Values that fully match this regex are never redacted, e.g. test fixtures |
 
-**4. Phát hành bản mới:** tăng `version` trong `plugins/tightlip/.claude-plugin/plugin.json` rồi push. Nếu không tăng version, người dùng sẽ không nhận được bản mới. Phía người dùng chạy `claude plugin update tightlip@vntrungld`, hoặc bật auto-update trong `/plugin` → Marketplaces.
+**3. Releasing (maintainers):** bump `version` in `plugins/tightlip/.claude-plugin/plugin.json` and push. Users don't get a new release unless the version changes. They update with `claude plugin update tightlip@vntrungld`, or by enabling auto-update under `/plugin` → Marketplaces.
 
-### Dùng cho cả team
+### For a whole team
 
-Thêm đoạn sau vào `.claude/settings.json` của repo dự án:
+Add this to the project's `.claude/settings.json`:
 
 ```json
 {
   "extraKnownMarketplaces": {
-    "vntrungld": { "source": { "source": "github", "repo": "<ban>/tightlip" } }
+    "vntrungld": { "source": { "source": "github", "repo": "vntrungld/tightlip" } }
   },
   "enabledPlugins": { "tightlip@vntrungld": true }
 }
 ```
 
-Khi mỗi người trust thư mục dự án, marketplace sẽ được đăng ký tự động, nhưng mỗi người vẫn phải chạy `/plugin install` một lần. Muốn bắt buộc toàn tổ chức thì admin khai báo hai key này trong managed settings (`/etc/claude-code/managed-settings.json` trên Linux).
+When someone trusts the project folder, the marketplace is registered automatically, but each person still runs `/plugin install` once. To enforce it across an organization, an admin sets both keys in managed settings (`/etc/claude-code/managed-settings.json` on Linux).
 
-### Phần plugin không tự làm được
+### What the plugin can't do for you
 
-Plugin không được phép thêm `permissions`. Vì vậy, nếu muốn chặn cả trường hợp bạn tự gắn file credential bằng `@` (cách này không đi qua hook), hãy tự thêm vào `~/.claude/settings.json`:
+Plugins aren't allowed to add `permissions`. Files you attach yourself with `@` don't go through hooks, so to cover that case add this to `~/.claude/settings.json`:
 
 ```json
 {
@@ -78,46 +78,46 @@ Plugin không được phép thêm `permissions`. Vì vậy, nếu muốn chặn
 }
 ```
 
-## Cài không qua plugin
+## Install without the plugin system
 
 ```bash
-python3 standalone/install.py --dry-run   # xem settings.json sau khi merge
+python3 standalone/install.py --dry-run   # preview settings.json after the merge
 python3 standalone/install.py
 ```
 
-Script này copy hook vào `~/.claude/hooks/`, merge cấu hình (gồm cả các deny rule ở trên) vào `~/.claude/settings.json`, giữ nguyên hook cũ và backup trước khi ghi. Ở chế độ này, tùy chọn được đặt bằng biến môi trường: `TIGHTLIP_QUIET=1`, `TIGHTLIP_BLOCK_DOTENV=1`, `TIGHTLIP_NAME_SESSIONS=0`, `TIGHTLIP_ALLOW_REGEX=...`, `TIGHTLIP_DISABLE=1`. Chỉ dùng một trong hai cách cài, không dùng cả hai.
+The script copies the hook to `~/.claude/hooks/` and merges its config (including the deny rules above) into `~/.claude/settings.json`, keeping your existing hooks and writing a backup first. In this mode options are environment variables: `TIGHTLIP_QUIET=1`, `TIGHTLIP_BLOCK_DOTENV=1`, `TIGHTLIP_NAME_SESSIONS=0`, `TIGHTLIP_ALLOW_REGEX=...`, `TIGHTLIP_DISABLE=1`. Use one install method, not both.
 
-## Kiểm tra
+## Testing
 
 ```bash
-python3 -m unittest discover -v tests                                       # 38 test
+python3 -m unittest discover -v tests                                       # 38 tests
 echo 'DB_PASSWORD=abc123xyz' | python3 plugins/tightlip/scripts/tightlip.py --filter
 ```
 
-Đã cài thử qua marketplace trên Claude Code 2.1.289:
-- `claude plugin details` nhận đủ 5 hook.
-- Trong phiên thật, `cat .env` chỉ cho model thấy placeholder.
-- Với `cat .env && exit 3`, phiên dừng trước khi output được gửi lên model.
-- Không có request đặt tên phiên nào được gửi đi.
+Tested through the marketplace on Claude Code 2.1.289:
+- `claude plugin details` lists all 5 hooks.
+- In a real session, `cat .env` shows the model only placeholders.
+- With `cat .env && exit 3`, the turn stops before the output reaches the model.
+- No session-title request is sent.
 
-## Nhận diện được gì
+## What it detects
 
-- **Token có định dạng riêng (khoảng 50 rule):** AWS, GitHub, GitLab, Slack, Stripe, Google, OpenAI/Anthropic/DeepSeek, DigitalOcean, Shopify, Atlassian, Sentry, PostHog `phx_`, npm, Docker Hub, Telegram, Grafana, Vault, Doppler, JWT, private key PEM, Laravel `APP_KEY`...
-- **Nhận diện theo ngữ cảnh:**
-  - `KEY=value` kiểu dotenv/shell.
-  - YAML, JSON, mảng PHP có key nhạy cảm.
-  - URL dạng `user:pass@`, header `Authorization`/`X-API-Key`, query `?token=`, tham số `--password=`.
-  - Khối `env` của k8s, output của `php artisan config:show`.
-- **Giá trị ngẫu nhiên dài** trong `UPPER_CASE=...`.
+- **Tokens with a known format (about 50 rules):** AWS, GitHub, GitLab, Slack, Stripe, Google, OpenAI/Anthropic/DeepSeek, DigitalOcean, Shopify, Atlassian, Sentry, PostHog `phx_`, npm, Docker Hub, Telegram, Grafana, Vault, Doppler, JWT, PEM private keys, Laravel `APP_KEY`…
+- **By context:**
+  - dotenv/shell `KEY=value`, including lines prefixed by `grep -n`, `grep -rn` or `cat -n`.
+  - YAML, JSON and PHP arrays with sensitive keys.
+  - `user:pass@` in URLs, `Authorization`/`X-API-Key` headers, `?token=` query strings, `--password=` flags.
+  - k8s `env` blocks, `php artisan config:show` output.
+- **Long random values** in `UPPER_CASE=...`.
 
-Đã chạy thử trên laravel/framework, express, thư viện chuẩn Python và npm (khoảng 6.500 file). Những thứ bị che chỉ là giá trị test trông như secret thật. Validation rule, `env('APP_KEY')`, file dịch và hash trong lock file không bị che nhầm.
+Run over laravel/framework, express, the Python standard library and npm packages (about 6,500 files), it only redacted test values that look like real secrets. Validation rules, `env('APP_KEY')`, translation files, lock-file hashes and Python/JS constants are left alone.
 
-## Giới hạn
+## Limitations
 
-1. **Output của lệnh bị lỗi.** Hook không sửa được loại output này, chỉ dừng được trước khi gửi đi. Nội dung đó vẫn nằm trong hội thoại, và nếu bạn nhắn tiếp thì model sẽ thấy nó. Vì vậy hãy dùng `/rewind` (Esc Esc) để quay về trước lượt đó. Thông báo chặn có ghi nơi chứa secret (lệnh hoặc file và số dòng, ví dụ `config/.env.prod:12`) để bạn xem lại, nhưng không ghi giá trị.
-2. **Tên phiên.** Khi `name_sessions` bật, phiên mang tên thư mục và giờ, thay vì tên do model tóm tắt. Nếu tắt, prompt đầu tiên của mỗi phiên sẽ được gửi đi trước khi hook kịp chặn.
-3. **File gắn bằng `@` và lệnh `!` bạn tự chạy không qua hook.** Output của `! cat .env` vào thẳng hội thoại mà không bị che. Với file gắn bằng `@`, xem phần deny rule ở trên.
-4. **Regex có giới hạn.** Những thứ sẽ lọt: giá trị in ra không kèm tên biến (ví dụ `cut -d= -f2 .env`), secret mã hóa base64, token có định dạng lạ. Thêm định dạng riêng vào `FORMAT_RULES` trong `scripts/tightlip.py`.
-5. **Hook chỉ thay đổi những gì model thấy.** Lệnh vẫn chạy thật. OpenTelemetry (nếu bật) vẫn ghi output gốc.
-6. **Model vẫn có thể sửa file plugin qua Bash.** Muốn chắc chắn, admin force-enable plugin trong managed settings và bật `allowManagedHooksOnly`.
-7. **Chỉ dùng cho Claude Code.** Codex chưa cho hook thay output (openai/codex#38135).
+1. **Output of failed commands.** Hooks can't rewrite it, only stop the turn before it's sent. The content stays in the conversation, and if you just keep chatting the model will see it, so use `/rewind` (Esc Esc) to go back before that turn. The block message says where the secret is (command, or file and line such as `config/.env.prod:12`) so you can review it, but never the value itself.
+2. **Session titles.** With `name_sessions` on, sessions are named after the folder and time instead of a model-written summary. With it off, each session's first prompt is sent before hooks can block it.
+3. **`@` attachments and your own `!` commands bypass hooks.** The output of `! cat .env` goes straight into the conversation unredacted. For `@` files, see the deny rules above.
+4. **Regexes have limits.** These get through: values printed without their variable name (e.g. `cut -d= -f2 .env`), base64-encoded secrets, tokens with unusual formats. Add your own formats to `FORMAT_RULES` in `scripts/tightlip.py`.
+5. **Hooks only change what the model sees.** Commands still run for real, and OpenTelemetry (if enabled) still records the original output.
+6. **The model could edit the plugin files via Bash.** For a hard guarantee, an admin force-enables the plugin in managed settings and turns on `allowManagedHooksOnly`.
+7. **Claude Code only.** Codex doesn't let hooks replace tool output yet (openai/codex#38135).

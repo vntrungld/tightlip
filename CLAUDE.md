@@ -37,6 +37,6 @@ Two install paths share the same script: the plugin (`plugins/tightlip/hooks/hoo
 
 - **Tests must never contain a literal token.** Fake credentials are generated at runtime with `rnd()`, and known prefixes are split with `p("gh", "p_")` so neither secret scanners nor GitHub push protection flag the file. New false-positive regressions go in `NOT_SECRETS`; new formats go in `SAMPLES`.
 - Tests point `XDG_CONFIG_HOME`/`XDG_STATE_HOME` at temp dirs; keep it that way so the real HMAC key and markers aren't touched.
-- Messages shown to the user (`systemMessage`, block `reason`s, installer output, README) are in Vietnamese; messages read by the model (`permissionDecisionReason`, `additionalContext`) are in English.
+- Messages shown to the user (`systemMessage`, block `reason`s, installer output, `README.vi.md`) are in Vietnamese, `README.md` is the English version of the README (keep both in sync); messages read by the model (`permissionDecisionReason`, `additionalContext`) are in English.
 - Releasing: bump `version` in `plugins/tightlip/.claude-plugin/plugin.json` (users don't get updates otherwise) and keep `VERSION` in `tightlip.py` in sync.
 - Hook handlers must never crash the session: `main()` swallows exceptions, exits 0, and warns that output wasn't scanned.
