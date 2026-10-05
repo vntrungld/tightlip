@@ -19,14 +19,14 @@ Plugin chỉ chạy hook, không thêm gì vào context của model, nên không
 **1. Cài trong Claude Code:**
 
 ```
-/plugin marketplace add vntrungld/tightlip
+/plugin marketplace add https://github.com/vntrungld/tightlip.git
 /plugin install tightlip
 ```
 
 Hoặc chạy từ shell:
 
 ```bash
-claude plugin marketplace add vntrungld/tightlip
+claude plugin marketplace add https://github.com/vntrungld/tightlip.git
 claude plugin install tightlip
 ```
 
@@ -52,7 +52,7 @@ Thêm đoạn sau vào `.claude/settings.json` của repo dự án:
 ```json
 {
   "extraKnownMarketplaces": {
-    "vntrungld": { "source": { "source": "github", "repo": "vntrungld/tightlip" } }
+    "vntrungld": { "source": { "source": "git", "url": "https://github.com/vntrungld/tightlip.git" } }
   },
   "enabledPlugins": { "tightlip@vntrungld": true }
 }

@@ -19,14 +19,14 @@ The plugin only runs hooks and adds nothing to the model's context, so it costs 
 **1. In Claude Code:**
 
 ```
-/plugin marketplace add vntrungld/tightlip
+/plugin marketplace add https://github.com/vntrungld/tightlip.git
 /plugin install tightlip
 ```
 
 Or from a shell:
 
 ```bash
-claude plugin marketplace add vntrungld/tightlip
+claude plugin marketplace add https://github.com/vntrungld/tightlip.git
 claude plugin install tightlip
 ```
 
@@ -52,7 +52,7 @@ Add this to the project's `.claude/settings.json`:
 ```json
 {
   "extraKnownMarketplaces": {
-    "vntrungld": { "source": { "source": "github", "repo": "vntrungld/tightlip" } }
+    "vntrungld": { "source": { "source": "git", "url": "https://github.com/vntrungld/tightlip.git" } }
   },
   "enabledPlugins": { "tightlip@vntrungld": true }
 }
