@@ -13,8 +13,8 @@
     {
       "name": "jeffort",
       "source": {
-        "source": "github",
-        "repo": "vntrungld/jeffort"
+        "source": "url",
+        "url": "https://github.com/vntrungld/jeffort.git"
       },
       "description": "Per-turn effort routing with TypeSafe's Jev, applied per request. Off until /jev on."
     }
