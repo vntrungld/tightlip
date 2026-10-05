@@ -50,7 +50,7 @@ import time
 import urllib.parse
 from collections import Counter
 
-VERSION = "1.0.5"
+VERSION = "1.0.6"
 
 PLACEHOLDER_RE = re.compile(r"\[REDACTED:[a-z0-9-]+:[0-9a-f]{8}\]")
 
@@ -192,6 +192,8 @@ def wordy(v):
     """Identifier-ish words with acronyms or markers: '?ArrowFunctionJSX'. Random
     strings switch case every char or two; identifiers have long lowercase runs."""
     core = v.strip("?!:")
+    if core == v and not re.search(r"[A-Z]{2,}", v):
+        return False  # plain mixed case is IDENTIFIER_RE's call; random strings look wordy too
     runs = re.findall(r"[a-z]+", core)
     if not core.isalpha() or not runs or len(re.findall(r"[A-Z]{2,}", core)) > 1:
         return False  # one acronym at most: 'ParseJSX', not 'aoYWSQnpTJrlEK'
@@ -247,7 +249,8 @@ def loose_value_is_secret(v, quoted, key=""):
     if dotted_name(v):
         return False
     low = v.lower()
-    if any(len(part) >= 3 and part in low for part in key_parts(key)):
+    words = set(re.split(r"[^a-z0-9]+", re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", v).lower()))
+    if any(len(part) >= 3 and part in words for part in key_parts(key)):
         return False  # 'pwd' => 'pwd#module-pwd', 'token' => 'passwords.token'
     if not quoted:  # unquoted in code is usually a variable; in YAML it must look random
         mixed = len(v) >= 16 and re.search(r"[a-z]", v) and re.search(r"[A-Z]", v)
@@ -435,6 +438,7 @@ CONTEXT_RULES = [
 ]
 
 _VAL = r"(?P<val>\"(?:[^\"\\\n]|\\.)*\"|'(?:[^'\\\n]|\\.)*'"
+_QVAL = _VAL + r")"  # quoted values only
 # Line prefixes added by line-oriented tools, so `grep -rn PASSWORD .` is
 # scanned like the file itself: `cat -n` (`    49\t`), `grep -n`/`-C` (`49:`,
 # `48-`), `grep -rn` (`./.env:49:`, `./.env-48-`) and `grep -r` (`./.env:`).
@@ -459,7 +463,16 @@ KV_RULES = [
     ("arrow", re.compile(  # php arrays: 'password' => 'literal'
         r"(?P<q>[\"'])(?P<key>[A-Za-z_][A-Za-z0-9_.\-]*)(?P=q)\s*=>\s*"
         + _VAL + r")(?!\s*\.)")),
+    ("decl", re.compile(  # code, any naming style, optional type: const apiKey: string = "...", ApiKey = "..."
+        r"(?<![\w.$\-'\"])(?P<key>[A-Za-z_]\w*)[ \t]*(?::[ \t]*[\w&<>\[\]?.,' ]{1,40}?[ \t]*)?=[ \t]*" + _QVAL)),
+    ("define", re.compile(  # php: define('API_KEY', '...')
+        r"\bdefine\([ \t]*(?P<q>[\"'])(?P<key>\w+)(?P=q)[ \t]*,[ \t]*" + _QVAL)),
+    ("cdefine", re.compile(  # c / c++: #define API_KEY "..."
+        r"^[ \t]*#[ \t]*define[ \t]+(?P<key>\w+)[ \t]+" + _QVAL, re.M)),
+    ("attr", re.compile(  # elixir module attributes: @api_key "..."
+        r"^[ \t]*@(?P<key>[a-z_]\w*)[ \t]+" + _QVAL, re.M)),
 ]
+CODE_MODES = ("decl", "define", "cdefine", "attr")
 
 
 # --------------------------------------------------------------------------- redactor
@@ -522,7 +535,9 @@ class Redactor:
             if val[:1] in "\"'" and not quoted:
                 return m.group(0)  # unbalanced quote: multi-line value, leave it
             code = False
-            if mode == "dots":
+            if mode in CODE_MODES:
+                strict, code = False, True  # source code: the value must look random
+            elif mode == "dots":
                 strict = True  # an explicit config dump: every value is a literal
             else:
                 strict = mode != "arrow" and UPPER_KEY_RE.fullmatch(key) is not None
@@ -531,7 +546,8 @@ class Redactor:
             if is_sensitive_key(key, strict):
                 check = strict_value_is_secret if strict else loose_value_is_secret
                 rule = "env-secret" if strict else "config-secret"
-            elif mode in ("upper", "line") and (strict or (code and key_parts(key)[-1] not in SKIP_KEY_SUFFIX)):
+            elif (mode in ("upper", "line") or (mode in CODE_MODES and UPPER_KEY_RE.fullmatch(key))) \
+                    and (strict or (code and key_parts(key)[-1] not in SKIP_KEY_SUFFIX)):
                 check, rule = high_entropy_literal, "high-entropy-value"
             else:
                 return m.group(0)

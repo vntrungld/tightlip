@@ -295,6 +295,24 @@ class GenericRules(unittest.TestCase):
         for s in (tok, conf, pw):
             self.assertNotIn(s, out)
 
+    def test_constants_across_languages(self):
+        forms = [
+            "{k} = '{v}'", "const {k} = '{v}';", "export const {k}: string = '{v}';",
+            "    public const {k} = '{v}';", "define('{k}', '{v}');",
+            '    private static final String {k} = "{v}";', 'const val {k} = "{v}"',
+            '    public const string {c} = "{v}";', 'const {c} = "{v}"', '\t{k} = "{v}"',
+            'const {k}: &str = "{v}";', "{k} = '{v}'.freeze", '#define {k} "{v}"',
+            'let {l} = "{v}"', 'let {l}: String = "{v}"', '@{s} "{v}"', 'readonly {k}="{v}"',
+        ]
+        secret = rnd(28)
+        for form in forms:
+            with self.subTest(form=form):
+                safe = form.format(k="METADATA_KEY", c="MetadataKey", l="metadataKey", s="metadata_key",
+                                   v="metadata-config-key")
+                self.assertEqual(redact(safe)[0], safe)
+                out, _ = redact(form.format(k="API_KEY", c="ApiKey", l="apiKey", s="api_key", v=secret))
+                self.assertNotIn(secret, out)
+
     def test_grep_and_cat_n_line_prefixes(self):
         pw = rnd(16)
         for prefix in ("49:", "48-", "./.env:49:", "./.env-48-", "./.env:", "    49\t", "conf/app.ini:3:"):

@@ -90,7 +90,7 @@ Script này copy hook vào `~/.claude/hooks/`, merge cấu hình (gồm cả cá
 ## Kiểm tra
 
 ```bash
-python3 -m unittest discover -v tests                                       # 38 test
+python3 -m unittest discover -v tests                                       # 39 test
 echo 'DB_PASSWORD=abc123xyz' | python3 plugins/tightlip/scripts/tightlip.py --filter
 ```
 
@@ -108,9 +108,10 @@ echo 'DB_PASSWORD=abc123xyz' | python3 plugins/tightlip/scripts/tightlip.py --fi
   - YAML, JSON, mảng PHP có key nhạy cảm.
   - URL dạng `user:pass@`, header `Authorization`/`X-API-Key`, query `?token=`, tham số `--password=`.
   - Khối `env` của k8s, output của `php artisan config:show`.
+  - Secret viết cứng trong code: `const apiKey: string = "…"` (TS, Rust, Swift, Kotlin, C#, Go, Java, PHP, Ruby, Python), `define('API_KEY', …)`, `#define API_KEY "…"`, `@api_key "…"` của Elixir. Trong code, giá trị phải trông ngẫu nhiên mới bị che, nên hằng số bình thường không bị ảnh hưởng.
 - **Giá trị ngẫu nhiên dài** trong `UPPER_CASE=...`.
 
-Đã chạy thử trên laravel/framework, express, thư viện chuẩn Python và npm (khoảng 6.500 file). Những thứ bị che chỉ là giá trị test trông như secret thật. Validation rule, `env('APP_KEY')`, file dịch, hash trong lock file và hằng số Python/JS không bị che nhầm.
+Đã chạy thử trên laravel/framework, express, thư viện chuẩn Python và npm (khoảng 6.500 file). Những thứ bị che chỉ là giá trị test trông như secret thật. Validation rule, `env('APP_KEY')`, file dịch, hash trong lock file và hằng số trong code không bị che nhầm.
 
 ## Giới hạn
 

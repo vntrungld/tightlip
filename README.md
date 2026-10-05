@@ -90,7 +90,7 @@ The script copies the hook to `~/.claude/hooks/` and merges its config (includin
 ## Testing
 
 ```bash
-python3 -m unittest discover -v tests                                       # 38 tests
+python3 -m unittest discover -v tests                                       # 39 tests
 echo 'DB_PASSWORD=abc123xyz' | python3 plugins/tightlip/scripts/tightlip.py --filter
 ```
 
@@ -108,9 +108,10 @@ Tested through the marketplace on Claude Code 2.1.289:
   - YAML, JSON and PHP arrays with sensitive keys.
   - `user:pass@` in URLs, `Authorization`/`X-API-Key` headers, `?token=` query strings, `--password=` flags.
   - k8s `env` blocks, `php artisan config:show` output.
+  - Secrets hard-coded in source: `const apiKey: string = "…"` (TS, Rust, Swift, Kotlin, C#, Go, Java, PHP, Ruby, Python), `define('API_KEY', …)`, `#define API_KEY "…"`, Elixir `@api_key "…"`. In code the value must look random, so ordinary constants are left alone.
 - **Long random values** in `UPPER_CASE=...`.
 
-Run over laravel/framework, express, the Python standard library and npm packages (about 6,500 files), it only redacted test values that look like real secrets. Validation rules, `env('APP_KEY')`, translation files, lock-file hashes and Python/JS constants are left alone.
+Run over laravel/framework, express, the Python standard library and npm packages (about 6,500 files), it only redacted test values that look like real secrets. Validation rules, `env('APP_KEY')`, translation files, lock-file hashes and constants in source code are left alone.
 
 ## Limitations
 
